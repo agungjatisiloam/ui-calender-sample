@@ -30,7 +30,7 @@ export default function DailyView({
   CustomEventComponent,
   CustomEventModal,
   classNames,
-  filterLocation,
+  // filterLocation,
   filterObject,
   filterOrganization,
 }: {
@@ -39,7 +39,7 @@ export default function DailyView({
   CustomEventComponent?: React.FC<Event>;
   CustomEventModal?: CustomEventModal;
   classNames?: { prev?: string; next?: string; addEvent?: string };
-  filterLocation?: string;
+  // filterLocation?: string;
   filterObject?: string;
   filterOrganization?: string;
 }) {
@@ -47,7 +47,7 @@ export default function DailyView({
   const hoursColumnRef = useRef<HTMLDivElement>(null);
   const [timeInterval, setTimeInterval] = useState(15); // Default: 15 minutes
 
-  const [detailedHour, setDetailedHour] = useState<array | null>(null);
+  const [detailedHour, setDetailedHour] = useState<[] | null>(null);
   const [timelinePosition, setTimelinePosition] = useState<number>(0);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [availableData, setAvailable] = useState<any>([]);
@@ -84,10 +84,10 @@ export default function DailyView({
 
   useEffect(() => {
     getCalendars();
-  }, [currentDate, filterLocation, filterObject, filterOrganization]);
+  }, [currentDate, filterObject, filterOrganization]);
 
   const getCalendars = async () => {
-    if (!currentDate || !filterLocation || !filterObject) return;
+    if (!currentDate || !filterObject) return;
   
     const headers = {
       "x-userid": "xxx",
@@ -100,7 +100,8 @@ export default function DailyView({
   
     const params = new URLSearchParams();
     if (filterObject) params.append("objectId", filterObject);
-    if (filterLocation) params.append("locationId", filterLocation);
+    if (filterOrganization) params.append("organizationId", filterOrganization);
+    // if (filterLocation) params.append("locationId", filterLocation);
 
     const month = ('0'+ (currentDate.getMonth()+1)).slice(-2)
     const date = ('0'+ (currentDate.getDate())).slice(-2)
@@ -137,7 +138,7 @@ export default function DailyView({
   }
 
   const getAppointments = async () => {
-    if (!filterLocation) return;
+    // if (!filterLocation) return;
   
     const headers = {
       "x-userid": "xxx",
@@ -150,7 +151,7 @@ export default function DailyView({
   
     const params = new URLSearchParams();
     if (filterObject) params.append("masterObjectId", filterObject);
-    if (filterLocation) params.append("locationId", filterLocation);
+    // if (filterLocation) params.append("locationId", filterLocation);
     // if (filterOrganization) params.append("hospitalId", filterOrganization);
     params.append("appointmentFromDate", (new Date(currentDate)).toISOString())
     params.append("appointmentToDate", (new Date(currentDate)).toISOString())
@@ -254,6 +255,7 @@ export default function DailyView({
     const t = generateTimeIntervals(selected.from, selected.to, Number(selected.raw.quota.total));
     setTimeInterval(t.timeIntervalMinutes)
     setTimeSlots(t.timeIntervals)
+    // setTimeSlots(t.timeIntervalsFullDay)
 
     // Walkin Setting
     const walkinQuota = selected.raw.quota.walk_in;
@@ -442,7 +444,7 @@ const generateTimeIntervals = (startTime: string, endTime: string, numberOfInter
               No available time slots.
             </div>
           ) : (
-            timeSlots.map((slot, index) => {
+            timeSlots.map((slot: any, index: number) => {
               const availableSlot = availableData.find(({ from, to }: any) => slot >= from && slot < to);
               const booked = bookedData.find(({ from, to }: any) => slot >= from && slot < to);
               const isBooked = !!booked;
