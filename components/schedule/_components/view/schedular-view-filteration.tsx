@@ -17,7 +17,7 @@ import axios from "axios";
 import { locationData, objectBylocationData } from "@/services/mocksFilter/masterMock";
 
 // Sample Master Object Data (Replace with API response)
-process.env.API_CALENDAR_URL='http://localhost:3000'
+process.env.API_CALENDAR_URL='https://uat-mysiloam-api-01.siloamhospitals.com/next-appointment'
 
 export default function SchedulerViewFilteration({
   views = {
