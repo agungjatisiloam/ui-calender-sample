@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode } from "react";
+import { randomUUID } from 'crypto';
 import {
   Modal,
   ModalContent,
@@ -40,7 +41,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     modalClassName?: string;
   }) => {
     const newModal = {
-      id: crypto.randomUUID(), // Unique ID for each modal
+      id: randomUUID(), // Unique ID for each modal
       title,
       body,
       footer,
