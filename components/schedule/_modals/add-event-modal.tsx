@@ -192,6 +192,7 @@ export default function AddEventModal({
   };
 
   return (
+    <div>
     <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
       {/* <Input {...register("title")}  label="MR patient" placeholder="Enter mr patient" variant="bordered" isInvalid={!!errors.title} errorMessage={errors.title?.message} /> */}
       <Textarea {...register("description")} value={description} onChange={(e) => setDecription(e.target.value)} label="Description" placeholder="Enter event description" variant="bordered" />
@@ -217,5 +218,128 @@ export default function AddEventModal({
         <Button color="primary" type="submit">Save Event</Button>
       </ModalFooter>
     </form>
+
+    {booked ? (
+      <div>
+        <h1>Appointment Detail</h1>
+        <div className="flex flex-row gap-2 text-size">
+          {/* "contact_name": 'string',
+            "contact_birthdate": 'string',
+            "contact_local_mr": 'string',
+            "contact_phone": 'string',
+            "doctor_name": 'string | optional',
+            "payer_id": 'string | optional',
+            "payer_name": 'string | optional', 
+            "payer_number": 'string | optional',
+            "notes": 'string | optional',
+            "visit_number": 'string | optional',
+            "booking_code": 'string | optional' */}
+          {/* Patient */}
+          <div>
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="Nama Pasien"
+            label="Patient Name"
+            type="text"
+            variant="underlined"
+            size="sm"
+          />
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="01 Agustus 1990"
+            label="Patient Birtdate"
+            type="text"
+            variant="underlined"
+          />
+          {/* <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="101101"
+            label="Patient Local MR"
+            type="text"
+            variant="underlined"
+          /> */}
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="081234123412"
+            label="Patient Phone"
+            type="text"
+            variant="underlined"
+          />
+          </div>
+
+          <div>
+          {/* Doctor */}
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="Dr. Allan Archie"
+            label="Doctor Name"
+            type="text"
+            variant="underlined"
+          />
+
+          {/* Payer */}
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="Payer Placeholder"
+            label="Payer Name"
+            type="text"
+            variant="underlined"
+          />
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="PP0001"
+            label="Payer Number"
+            type="text"
+            variant="underlined"
+          />
+          </div>
+
+          {/* Appointment */}
+          <div>
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="patientsample@mailnesia.com"
+            label="Email"
+            type="email"
+            variant="underlined"
+          />
+
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="Tidak ada catatan"
+            label="Notes"
+            type="text"
+            variant="underlined"
+          />
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="EF0726741"
+            label="Visit Number"
+            type="text"
+            variant="underlined"
+          />
+          <Input
+            isReadOnly
+            className="max-w-xs"
+            defaultValue="MX88JM"
+            label="Booking Code"
+            type="text"
+            variant="underlined"
+          />
+          </div>
+        </div>
+      </div>
+      ) : ''}
+    </div>
   );
 }
