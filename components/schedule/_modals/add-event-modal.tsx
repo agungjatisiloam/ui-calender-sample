@@ -20,6 +20,19 @@ import { useScheduler } from "@/providers/schedular-provider";
 import { v4 as uuidv4 } from "uuid";
 import { BsSkipStart } from "react-icons/bs";
 
+interface ISlotContent {
+  contact_name: string | null;
+  birth_date: string | null;
+  phone_number: string | null;
+  doctor_name: string | null;
+  payer_name?: string | null;
+  payer_number?: string | null;
+  email_address: string | null;
+  notes: string | null;
+  visit_number: string | null;
+  appointment_code: string | null;
+}
+
 export default function AddEventModal({
   CustomAddEventModal, fromTime, // Accept props
   toTime, slot, booked, startDate, endDate, refreshCalendar
@@ -42,8 +55,9 @@ export default function AddEventModal({
   const [masterObjects, setMasterObjects] = useState<{ key: string; name: string }[]>([]);
   const [selectedSchedule, setSelectedSchedule] = useState<string>("");
   const [scheduleOptions, setScheduleOptions] = useState<
-    { key: string; name: string; startTime: string; endTime: string }[]
+  { key: string; name: string; startTime: string; endTime: string }[]
   >([]);
+  const [appointmentContent, setAppointmentContent] = useState<ISlotContent>();
 
   const typedData = data as Event;
 
@@ -128,6 +142,12 @@ export default function AddEventModal({
       setValue("startDate", adjustedDate);
     }
   }, [startDate, booked, setValue]);
+
+  useEffect(() => {
+    if (!booked) { return; }
+    const slotContent = slot.appointmentContent;
+    setAppointmentContent(slotContent);
+  }, [slot]);
 
   const onSubmit: SubmitHandler<EventFormData> = async (formData) => {
     console.log("🚀 ~ formData:", formData);
@@ -239,7 +259,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="Nama Pasien"
+            defaultValue={appointmentContent?.contact_name || "-"}
             label="Patient Name"
             type="text"
             variant="underlined"
@@ -248,7 +268,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="01 Agustus 1990"
+            defaultValue={appointmentContent?.birth_date || "-"}
             label="Patient Birtdate"
             type="text"
             variant="underlined"
@@ -264,7 +284,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="081234123412"
+            defaultValue={appointmentContent?.phone_number || "-"}
             label="Patient Phone"
             type="text"
             variant="underlined"
@@ -276,7 +296,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="Dr. Allan Archie"
+            defaultValue={appointmentContent?.doctor_name || "-"}
             label="Doctor Name"
             type="text"
             variant="underlined"
@@ -286,7 +306,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="Payer Placeholder"
+            defaultValue={appointmentContent?.payer_name || "-"}
             label="Payer Name"
             type="text"
             variant="underlined"
@@ -294,7 +314,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="PP0001"
+            defaultValue={appointmentContent?.payer_number || "-"}
             label="Payer Number"
             type="text"
             variant="underlined"
@@ -306,7 +326,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="patientsample@mailnesia.com"
+            defaultValue={appointmentContent?.email_address || "-"}
             label="Email"
             type="email"
             variant="underlined"
@@ -315,7 +335,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="Tidak ada catatan"
+            defaultValue={appointmentContent?.notes || "-"}
             label="Notes"
             type="text"
             variant="underlined"
@@ -323,7 +343,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="EF0726741"
+            defaultValue={appointmentContent?.visit_number || "-"}
             label="Visit Number"
             type="text"
             variant="underlined"
@@ -331,7 +351,7 @@ export default function AddEventModal({
           <Input
             isReadOnly
             className="max-w-xs"
-            defaultValue="MX88JM"
+            defaultValue={appointmentContent?.appointment_code || "-"}
             label="Booking Code"
             type="text"
             variant="underlined"
