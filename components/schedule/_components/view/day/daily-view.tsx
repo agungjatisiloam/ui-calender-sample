@@ -25,13 +25,19 @@ const bookedData = {
   ],
 };
 
+interface AppointmentEvent {
+  from: string;
+  to: string;
+  note?: string;
+}
+
 export default function DailyView({
   prevButton,
   nextButton,
   CustomEventComponent,
   CustomEventModal,
   classNames,
-  filterLocation,
+  // filterLocation,
   filterObject,
   filterOrganization,
 }: {
@@ -40,7 +46,7 @@ export default function DailyView({
   CustomEventComponent?: React.FC<Event>;
   CustomEventModal?: CustomEventModal;
   classNames?: { prev?: string; next?: string; addEvent?: string };
-  filterLocation?: string;
+  // filterLocation?: string;
   filterObject?: string;
   filterOrganization?: string;
 }) {
@@ -48,7 +54,7 @@ export default function DailyView({
   const hoursColumnRef = useRef<HTMLDivElement>(null);
   const [timeInterval, setTimeInterval] = useState(15); // Default: 15 minutes
 
-  const [detailedHour, setDetailedHour] = useState<array | null>(null);
+  const [detailedHour, setDetailedHour] = useState<[] | null>(null);
   const [timelinePosition, setTimelinePosition] = useState<number>(0);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [availableData, setAvailable] = useState<any>([]);
@@ -62,6 +68,81 @@ export default function DailyView({
     setCurrentDate(nextDay);
     getAppointments();
   };
+
+  const detectOverlaps = (events: AppointmentEvent[]): AppointmentEvent[][] => {
+    const sorted = [...events].sort((a, b) => a.from.localeCompare(b.from));
+    const groups: AppointmentEvent[][] = [];
+  
+    for (const event of sorted) {
+      let placed = false;
+      for (const group of groups) {
+        if (group.every((g) => event.from >= g.to || event.to <= g.from)) {
+          group.push(event);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        groups.push([event]);
+      }
+    }
+    console.log("groups", groups);  
+    return groups;
+  };
+
+  const timeToPosition = (time: string): number => {
+    const [h, m] = time.split(":").map(Number);
+    return (h * 60 + m) * 1.5;
+  };
+  
+  // ✅ Converts time duration to height in pixels
+  const timeToHeight = (from: string, to: string): number => {
+    const [fh, fm] = from.split(":").map(Number);
+    const [th, tm] = to.split(":").map(Number);
+    return ((th * 60 + tm) - (fh * 60 + fm)) * 2;
+  };
+
+  const renderOverlappingAppointments = (bookedData: AppointmentEvent[]) => {
+    const positioned = detectOverlaps(bookedData).flatMap((group) =>
+      group.map((event, index) => ({
+        ...event,
+        columnIndex: index,
+        totalColumns: group.length > 1 ? 2 : 1,
+      }))
+    );
+  
+    return positioned.map((event, index) => {
+      const top = slotToPixels(timeToSlotIndex(event.from));
+      const height = slotToPixels(
+        timeToSlotIndex(event.to) - timeToSlotIndex(event.from)
+      );
+      const widthPercent = 100 / event.totalColumns;
+      const leftPercent = widthPercent * event.columnIndex;
+  
+      return (
+        <div
+          key={`event-${index}`}
+          style={{
+            position: "absolute",
+            top: `${top}px`,
+            height: `${height}px`,
+            left: `${leftPercent}%`,
+            width: `${widthPercent}%`,
+            backgroundColor: "#e11d48",
+            color: "white",
+            padding: "4px",
+            borderRadius: "6px",
+            fontSize: "12px",
+            zIndex: 10,
+            boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.2)",
+          }}
+        >
+          {event.note || "Booked"}
+        </div>
+      );
+    });
+  };
+  
 
   const handlePrevDay = () => {
     const prevDay = new Date(currentDate);
@@ -86,10 +167,10 @@ export default function DailyView({
 
   useEffect(() => {
     getCalendars();
-  }, [currentDate, filterLocation, filterObject, filterOrganization]);
+  }, [currentDate, filterObject, filterOrganization]);
 
   const getCalendars = async () => {
-    if (!currentDate || !filterLocation || !filterObject) return;
+    if (!currentDate || !filterObject) return;
   
     const headers = {
       "x-userid": "xxx",
@@ -102,7 +183,8 @@ export default function DailyView({
   
     const params = new URLSearchParams();
     if (filterObject) params.append("objectId", filterObject);
-    if (filterLocation) params.append("locationId", filterLocation);
+    if (filterOrganization) params.append("organizationId", filterOrganization);
+    // if (filterLocation) params.append("locationId", filterLocation);
 
     const month = ('0'+ (currentDate.getMonth()+1)).slice(-2)
     const date = ('0'+ (currentDate.getDate())).slice(-2)
@@ -139,7 +221,7 @@ export default function DailyView({
   }
 
   const getAppointments = async () => {
-    if (!filterLocation) return;
+    // if (!filterLocation) return;
   
     const headers = {
       "x-userid": "xxx",
@@ -152,7 +234,7 @@ export default function DailyView({
   
     const params = new URLSearchParams();
     if (filterObject) params.append("masterObjectId", filterObject);
-    if (filterLocation) params.append("locationId", filterLocation);
+    // if (filterLocation) params.append("locationId", filterLocation);
     // if (filterOrganization) params.append("hospitalId", filterOrganization);
     params.append("appointmentFromDate", (new Date(currentDate)).toISOString())
     params.append("appointmentToDate", (new Date(currentDate)).toISOString())
@@ -261,6 +343,7 @@ export default function DailyView({
     const t = generateTimeIntervals(selected.from, selected.to, Number(selected.raw.quota.total));
     setTimeInterval(t.timeIntervalMinutes)
     setTimeSlots(t.timeIntervals)
+    // setTimeSlots(t.timeIntervalsFullDay)
 
     // Walkin Setting
     const walkinQuota = selected.raw.quota.walk_in;
@@ -320,6 +403,15 @@ export default function DailyView({
     return diffString;
 }
 
+const getRandomColor = (seed: number) => {
+  const colors = [
+    "#e11d48", "#3b82f6", "#10b981", "#f59e0b",
+    "#6366f1", "#ec4899", "#14b8a6", "#f97316",
+    "#8b5cf6", "#22c55e", "#0ea5e9", "#eab308",
+  ];
+  return colors[seed % colors.length];
+};
+
 const generateTimeIntervals = (startTime: string, endTime: string, numberOfIntervals: number) => {
   // Konversi waktu ke menit
   const startMinutes = parseInt(startTime.split(":")[0]) * 60 + parseInt(startTime.split(":")[1]);
@@ -371,7 +463,20 @@ const generateTimeIntervals = (startTime: string, endTime: string, numberOfInter
   }
 
 
+
+  const overlappingGroups = detectOverlaps(bookedData);
+
+  const timeToSlotIndex = (time: string): number => {
+    const [h, m] = time.split(":").map(Number);
+    return Math.floor((h * 60 + m) / 15);
+  };
+  
+  const slotToPixels = (slots: number) => slots * 30; 
+
+
   return (
+
+    
     
     <div className="p-4">
       <h1 className="text-3xl font-semibold mb-4">
@@ -442,60 +547,78 @@ const generateTimeIntervals = (startTime: string, endTime: string, numberOfInter
         </div>
 
       {/* Time Slots Display */}
-      <div className="relative rounded-md bg-default-50 hover:bg-default-100 transition duration-400 w-full">
-        <motion.div className="relative rounded-xl flex flex-col w-full" ref={hoursColumnRef}>
-          {availableData.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
-              No available time slots.
-            </div>
-          ) : (
-            timeSlots.map((slot, index) => {
-              const availableSlot = availableData.find(({ from, to }: any) => slot >= from && slot < to);
-              const booked = bookedData.find(({ from, to }: any) => slot >= from && slot < to);
-              const isBooked = !!booked;
-              const isAvailable = availableSlot?.raw?.is_lock ? false : !!availableSlot;
+      
+      <div className="flex">
 
-              let slotClass = "bg-gray-800 text-gray-400"; // Default
-              let statusText = "";
+      <div className="w-16 flex flex-col text-xs text-right pr-2 ">
+      {Array.from({ length: 24 * 4 }, (_, i) => ( // 96 blocks of 15min
+          <div key={i} className="h-[30px] text-gray-500">
+            {i % 4 === 0 ? `${String(i / 4).padStart(2, '0')}:00` : ''}
+          </div>
+        ))}
+      </div>
 
-              if (isBooked) {
-                slotClass = "bg-red-500 text-white font-bold rounded-md shadow-md";
-                statusText = "⛔ Booked";
-              } else if (isAvailable) {
-                slotClass = "bg-green-200 text-black font-bold rounded-md shadow-md";
-                statusText = "✅ Available";
-              }
+      <div className="relative flex-1 h-[2880px] bg-gray-100 border-l">
+      {Array.from({ length: 24 * 4 }, (_, i) => {
+    const minutes = i * 8;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    const slotStart = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 
-              return (
-                <motion.div
-                  key={`time-slot-${index}`}
-                  onClick={() => {
-                    if (isAvailable && availableSlot) {
-                      // Calculate the "to" value by adding the selected timeInterval
-                      const [fromHours, fromMinutes] = timeSlots[index].split(":").map(Number);
-                      const toDate = new Date();
-                      toDate.setHours(fromHours);
-                      toDate.setMinutes(fromMinutes + timeInterval); // Add timeInterval minutes
+    const isBooked = bookedData.some(
+      (event: AppointmentEvent) => slotStart >= event.from && slotStart < event.to
+    );
 
-                      const toHours = String(toDate.getHours()).padStart(2, "0");
-                      const toMinutes = String(toDate.getMinutes()).padStart(2, "0");
-                      const toTime = `${toHours}:${toMinutes}`;
+    return (
+      <div
+        key={i}
+        className={`h-[30px] border-b border-gray-200 px-2 text-xs ${
+          isBooked ? "bg-white-200" : "bg-white"
+        }`}
+      >
+        {i % 7 === 0 ? slotStart : ""}
+      </div>
+    );
+  })}
 
-                      handleAddEventDay(timeSlots[index], toTime, availableSlot, booked);
-                    }
-                  }}
-                  className={`cursor-pointer px-6 py-3 h-[40px] flex items-center justify-between border-b border-default-200 w-full text-sm ${slotClass}`}
-                >
-                  <div className="flex flex-col" style={{position: 'relative'}}>
-                    <span>{timeSlots[index]} - {calculateEndTime(timeSlots[index], timeInterval)} {booked && booked.note ? ` | ${booked.note}` : '' }</span>
-                    {walkinSlots.includes(index) ? <span style={{fontSize: '10px', position: 'absolute', textAlign: 'right', left: 0, bottom: -12}}>Walk-in</span> : ''}
-                  </div>
-                  {statusText && <span>{statusText}</span>}
-                </motion.div>
-              );
-            })
-          )}
-        </motion.div>
+  {/* Booked events layer */}
+  {detectOverlaps(bookedData).map((group, groupIndex, allGroups) => {
+    const groupWidth = 100 / allGroups.length;
+    const leftOffset = groupWidth * groupIndex;
+
+    return group.map((event, eventIndex) => {
+      const fromIndex = timeToSlotIndex(event.from);
+      const toIndex = timeToSlotIndex(event.to);
+      const top = fromIndex * 30;
+      const height = (toIndex - fromIndex) * 30;
+
+      return (
+        <div
+          key={`group-${groupIndex}-event-${eventIndex}`}
+          style={{
+            position: "absolute",
+            top: `${top}px`,
+            left: `${leftOffset}%`,
+            width: `${groupWidth}%`,
+            height: `${height}px`,
+            backgroundColor: getRandomColor(eventIndex),
+            color: "white",
+            padding: "4px",
+            border: "1px solid #e11d48",
+            fontSize: "12px",
+            zIndex: 10,
+            boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.2)",
+          }}
+        >
+          {event.note || "Booked"} - 
+          {event.from} - {event.to}
+        </div>
+      );
+    });
+  })}
+      </div>
+        
+       
       </div>
 
       {/* Time Slot Display: Waiting List */}
